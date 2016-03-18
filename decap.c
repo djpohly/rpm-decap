@@ -67,8 +67,11 @@ int main(int argc, char **argv)
 	hdr.nindex = ntohl(hdr.nindex);
 	hdr.hdrlen = ntohl(hdr.hdrlen);
 
-	printf("== Header ==\nLength: %u\nIndex entries (%u):\n",
-			hdr.hdrlen, hdr.nindex);
+	long storeofs = sizeof(struct lead) + sizeof(struct header) +
+		hdr.nindex *  sizeof(struct idxentry);
+
+	printf("== Header ==\nStore offset: 0x%lx\nIndex entries (%u):\n",
+			storeofs, hdr.nindex);
 
 	int i;
 	for (i = 0; i < hdr.nindex; i++) {
@@ -76,11 +79,15 @@ int main(int argc, char **argv)
 		read(fd, &ent, sizeof(ent));
 		ent.tag = htonl(ent.tag);
 		ent.type = htonl(ent.type);
-		ent.offset = htonl(ent.offset);
+		ent.offset = storeofs + htonl(ent.offset);
 		ent.count = htonl(ent.count);
 		printf(" %d: %s, %d len @0x%x\n", ent.tag,
 				TYPENAME[ent.type], ent.count, ent.offset);
 	}
+
+	long sigofs = storeofs + hdr.hdrlen;
+
+	printf("== Signature ==\nStart offset: 0x%lx\n", sigofs);
 
 	close(fd);
 	return 0;
