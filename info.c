@@ -411,11 +411,11 @@ int main(int argc, char **argv)
 
 	int fd = open(argv[1], O_RDWR);
 	struct lead lead;
-	read(fd, &lead, sizeof(lead));
+	pread(fd, &lead, sizeof(lead), 0);
 
 	// First header
 	struct header hdr;
-	read(fd, &hdr, sizeof(hdr));
+	pread(fd, &hdr, sizeof(hdr), sizeof(lead));
 	hdr.nindex = be32toh(hdr.nindex);
 	hdr.len = be32toh(hdr.len);
 
