@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <endian.h>
+#include <rpm/rpmtag.h>
 
 #include "list.h"
 
@@ -28,10 +30,63 @@ void entry_destroy(struct entry *ent)
 {
 }
 
+static int entry_strarraylen(const struct entry *ent)
+{
+	int sz = 0;
+	int n = ent->count;
+	off_t ofs = ent->dataofs;
+	while (n > 0) {
+		char buf[BUFSIZ];
+		pread(ent->hdr->rpm->srcfd, buf, BUFSIZ, ofs);
+		int i;
+		for (i = 0; i < BUFSIZ && n > 0; i++)
+			if (!buf[i])
+				n--;
+		sz += i;
+		ofs += BUFSIZ;
+	}
+	return sz;
+}
+
+// based on rpm.org source
+static inline int entry_datalen(const struct entry *ent)
+{
+	switch (ent->type) {
+		case RPM_STRING_TYPE:
+		case RPM_STRING_ARRAY_TYPE:
+		case RPM_I18NSTRING_TYPE:
+			return entry_strarraylen(ent);
+		default:
+			return TYPE_SIZE[ent->type] * ent->count;
+	}
+	return -1;
+}
+
+static inline off_t entry_aligned_start(const struct entry *ent, off_t ofs)
+{
+	int align = TYPE_ALIGN[ent->type];
+	return ((ofs + align - 1) / align) * align;
+}
+
 int entry_dump(const struct entry *ent, FILE *f)
 {
-	fprintf(f, "tag %d: type %d count %d, data 0x%lx\n", ent->tag, ent->type,
-			ent->count, ent->dataofs);
+	fprintf(f, "tag %d: type %d count %d, data 0x%lx len %d\n", ent->tag,
+			ent->type, ent->count, ent->dataofs,
+			entry_datalen(ent));
+}
+
+static off_t entry_write(const struct entry *ent, int fd, off_t ofs)
+{
+	// Set up on-disk structure
+	struct entry_f ef;
+	ef.tag = htobe32(ent->tag);
+	ef.type = htobe32(ent->type);
+	ef.dataofs = htobe32(ent->dataofs - ent->hdr->storeofs);
+	ef.count = htobe32(ent->count);
+
+	// Write out structure
+	pwrite(fd, &ef, sizeof(ef), ofs);
+	return ofs + sizeof(ef);
 }
 
 
@@ -95,4 +150,41 @@ void header_dump(const struct header *hdr, FILE *f)
 	struct listnode *n;
 	for (n = hdr->entrylist.head; n; n = n->next)
 		entry_dump(n->data, f);
+}
+
+off_t header_write(const struct header *hdr, int fd, off_t ofs)
+{
+	// Align header to 8 bytes
+	ofs = ((ofs + 7) / 8) * 8;
+	
+	// Calculate updated values for entries and datalen
+	uint32_t entries = 0;
+	uint32_t datalen = 0;
+
+	struct listnode *n;
+	for (n = hdr->entrylist.head; n; n = n->next) {
+		datalen = entry_aligned_start(n->data, datalen);
+		datalen += entry_datalen(n->data);
+		entries++;
+	}
+	
+	// Set up on-disk structure
+	struct header_f hf;
+	memcpy(hf.magic, HEADER_MAGIC, sizeof(hf.magic));
+	hf.version = HEADER_VERSION;
+	memset(hf.reserved, 0, sizeof(hf.reserved));
+	hf.entries = htobe32(hdr->entries);
+	hf.datalen = htobe32(hdr->datalen);
+
+	// Write the header information
+	pwrite(fd, &hf, sizeof(hf), ofs);
+	ofs += sizeof(hf);
+
+	// Write the index entries
+	for (n = hdr->entrylist.head; n; n = n->next) {
+		ofs = entry_aligned_start(n->data, ofs);
+		ofs = entry_write(n->data, fd, ofs);
+	}
+
+	return ofs;
 }

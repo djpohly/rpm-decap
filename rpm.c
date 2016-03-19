@@ -37,6 +37,7 @@ off_t rpm_write(const struct rpm *rpm, int fd)
 {
 	off_t ofs = 0;
 	ofs = lead_write(&rpm->lead, fd, ofs);
+	ofs = header_write(&rpm->sighdr, fd, ofs);
 
 	return ofs;
 }
