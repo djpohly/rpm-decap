@@ -1,4 +1,6 @@
-BINS = decap
+BINS = info
+
+OBJS = $(addsuffix .o,$(BINS))
 
 CFLAGS += -Werror
 
@@ -7,4 +9,6 @@ CFLAGS += -Werror
 all: $(BINS)
 
 clean:
-	$(RM) $(BINS)
+	$(RM) $(BINS) $(OBJS)
+
+info.o: decap.h
