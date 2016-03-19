@@ -458,8 +458,8 @@ int main(int argc, char **argv)
 	long storeofs = idxofs + hdr.nindex * sizeof(struct idxentry);
 
 	printf("== Header 1 ==\nHeader offset: 0x%lx\nIndex offset: 0x%lx\n"
-			"Store offset: 0x%lx\nIndex entries (%u):\n",
-			hdrofs, idxofs, storeofs, hdr.nindex);
+			"Store: 0x%lx - 0x%lx\nIndex entries (%u):\n",
+			hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
 
 	int i;
 	for (i = 0; i < hdr.nindex; i++) {
@@ -512,8 +512,8 @@ int main(int argc, char **argv)
 	storeofs = idxofs + hdr.nindex * sizeof(struct idxentry);
 
 	printf("== Header 2 ==\nHeader offset: 0x%lx\nIndex offset: 0x%lx\n"
-			"Store offset: 0x%lx\nIndex entries (%u):\n",
-			hdrofs, idxofs, storeofs, hdr.nindex);
+			"Store: 0x%lx - 0x%lx\nIndex entries (%u):\n",
+			hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
 
 	for (i = 0; i < hdr.nindex; i++) {
 		struct idxentry ent;
