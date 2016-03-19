@@ -23,13 +23,6 @@ struct header_f {
 } __attribute__((packed));
 
 // In-memory structures
-struct entry {
-	uint32_t tag;
-	uint32_t type;
-	int32_t dataofs;
-	uint32_t count;
-};
-
 struct header {
 	uint32_t entries;
 	uint32_t datalen;
@@ -37,6 +30,14 @@ struct header {
 	uint32_t idxofs;
 	uint32_t storeofs;
 	struct list entrylist;
+};
+
+struct entry {
+	const struct header *hdr;
+	uint32_t tag;
+	uint32_t type;
+	int32_t dataofs;
+	uint32_t count;
 };
 
 int entry_init(struct entry *ent, int fd, const struct header *hdr, int i);

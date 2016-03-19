@@ -18,6 +18,7 @@ int entry_init(struct entry *ent, int fd, const struct header *hdr, int i)
 	ent->type = be32toh(ef.type);
 	ent->dataofs = hdr->storeofs + (int32_t) be32toh(ef.dataofs);
 	ent->count = be32toh(ef.count);
+	ent->hdr = hdr;
 	return 0;
 }
 
