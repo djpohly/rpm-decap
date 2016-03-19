@@ -37,7 +37,7 @@ void lead_dump(const struct lead *lead, FILE *f)
 	fprintf(f, "Signature type: %d\n", lead->sigtype);
 }
 
-int lead_write(const struct lead *lead, int fd, off_t ofs)
+off_t lead_write(const struct lead *lead, int fd, off_t ofs)
 {
 	// Set up on-disk structure
 	struct lead_f lf;
@@ -54,5 +54,5 @@ int lead_write(const struct lead *lead, int fd, off_t ofs)
 
 	pwrite(fd, &lf, sizeof(lf), ofs);
 
-	return 0;
+	return ofs + sizeof(lf);
 }
