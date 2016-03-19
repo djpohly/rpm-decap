@@ -10,6 +10,21 @@
 
 #include "decap.h"
 
+static int string_array_size(int fd, int ofs, int n)
+{
+	int sz = 0;
+	while (n > 0) {
+		char buf[BUFSIZ];
+		pread(fd, buf, BUFSIZ, ofs);
+		int i;
+		for (i = 0; i < BUFSIZ && n > 0; i++)
+			if (!buf[i])
+				n--;
+		sz += i;
+		ofs += BUFSIZ;
+	}
+}
+
 static int copy_bytes(int out, int in, unsigned int len)
 {
 	char buf[BUFSIZ];
@@ -151,13 +166,12 @@ int main(int argc, char **argv)
 			assert(ent.type == RPM_STRING_ARRAY_TYPE);
 			capofs = ent.offset;
 			newhdr.nindex--;
-			newhdr.len -= ent.count;
-			remsize -= sizeof(struct idxentry) + ent.count;
+			int capsize = string_array_size(in, capofs, ent.count);
+			newhdr.len -= capsize;
+			remsize -= sizeof(struct idxentry) + capsize;
 			fprintf(stderr, "found caps @ 0x%x\n", capofs);
 		}
 	}
-
-	// XXX Fix size in signature header
 
 	// Write (possibly adjusted) second header
 	newhdr.nindex = htobe32(newhdr.nindex);
