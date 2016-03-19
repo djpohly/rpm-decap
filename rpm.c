@@ -11,6 +11,7 @@ int rpm_init(struct rpm *rpm, int fd)
 	header_init_first(&rpm->sighdr, fd);
 	header_init_next(&rpm->taghdr, fd, &rpm->sighdr);
 	rpm->arcofs = rpm->taghdr.storeofs + rpm->taghdr.datalen;
+	rpm->srcfd = fd;
 	return 0;
 }
 
