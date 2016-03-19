@@ -2,7 +2,8 @@ BINS = info decap
 
 OBJS = $(addsuffix .o,$(BINS))
 
-CFLAGS += -Werror
+CFLAGS += -Werror -g
+LDFLAGS += -g
 
 .PHONY: all clean
 
