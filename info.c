@@ -8,48 +8,7 @@
 #include <rpm/rpmtag.h>
 #include <assert.h>
 
-#define	TAG_IS_REGION(tag) \
-	(((tag) >= RPMTAG_HEADERIMAGE) && ((tag) < RPMTAG_HEADERREGIONS))
-
-struct lead {
-	char magic[4];
-	char major;
-	char minor;
-	uint16_t type;
-	uint16_t arch;
-	char name[66];
-	uint16_t osnum;
-	uint16_t sigtype;
-	char reserved[16];
-} __attribute__((packed));
-
-struct header {
-	char magic[3];
-	char version;
-	char reserved[4];
-	uint32_t nindex;
-	uint32_t len;
-} __attribute__((packed));
-
-static const char *TYPENAME[] = {
-	[RPM_NULL_TYPE] = "null",
-	[RPM_CHAR_TYPE] = "char",
-	[RPM_INT8_TYPE] = "int8",
-	[RPM_INT16_TYPE] = "int16",
-	[RPM_INT32_TYPE] = "int32",
-	[RPM_INT64_TYPE] = "int64",
-	[RPM_STRING_TYPE] = "string",
-	[RPM_BIN_TYPE] = "bin",
-	[RPM_STRING_ARRAY_TYPE] = "string",
-	[RPM_I18NSTRING_TYPE] = "i18nstring",
-};
-
-struct idxentry {
-	uint32_t tag;
-	uint32_t type;
-	int32_t offset;
-	uint32_t count;
-} __attribute__((packed));
+#include "decap.h"
 
 static char *read_alloc_string(int fd, long offset)
 {
