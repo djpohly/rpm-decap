@@ -10,38 +10,6 @@
 
 #include "decap.h"
 
-static char *read_alloc_string(int fd, long offset)
-{
-	int len = 0;
-	int b = 0;
-	int p = 0;
-	char *s = NULL;
-
-	while (!memchr(s + p, '\0', len - p)) {
-		p += b;
-		if (p)
-			len = p * 2;
-		else
-			len = 32;
-		s = realloc(s, len);
-		if (!s)
-			return NULL;
-
-		b = pread(fd, s + p, len - p, offset + p);
-		if (b < 0) {
-			perror("pread");
-			free(s);
-			return NULL;
-		}
-		if (b == 0) {
-			fprintf(stderr, "hit EOF looking for end of string\n");
-			free(s);
-			return NULL;
-		}
-	}
-	return s;
-}
-
 static int copy_bytes(int out, int in, unsigned int len)
 {
 	char buf[BUFSIZ];
