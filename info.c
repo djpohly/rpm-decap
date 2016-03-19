@@ -515,6 +515,8 @@ int main(int argc, char **argv)
 	}
 	printf("\n");
 
+	assert(remsize >= 0);
+
 	// Pad to 8-byte alignment and seek past pad
 	hdrofs = storeofs + hdr.len;
 	hdrofs = ((hdrofs + 7) / 8) * 8;
