@@ -1,5 +1,7 @@
 BINS = decap
 
+CFLAGS += -Werror
+
 .PHONY: all clean
 
 all: $(BINS)
