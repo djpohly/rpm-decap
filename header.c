@@ -21,6 +21,10 @@ int entry_init(struct entry *ent, int fd, const struct header *hdr, int i)
 	return 0;
 }
 
+void entry_destroy(struct entry *ent)
+{
+}
+
 int entry_dump(const struct entry *ent, FILE *f)
 {
 	fprintf(f, "tag %d: type %d count %d, data 0x%lx\n", ent->tag, ent->type,
@@ -29,7 +33,7 @@ int entry_dump(const struct entry *ent, FILE *f)
 
 
 // Header blocks
-static int header_read_common(struct header *hdr, int fd, off_t ofs)
+static int header_init_common(struct header *hdr, int fd, off_t ofs)
 {
 	struct header_f hf;
 	pread(fd, &hf, sizeof(hf), ofs);
@@ -51,16 +55,26 @@ static int header_read_common(struct header *hdr, int fd, off_t ofs)
 	return 0;
 }
 
-int header_read_first(struct header *hdr, int fd)
+int header_init_first(struct header *hdr, int fd)
 {
-	return header_read_common(hdr, fd, sizeof(struct lead_f));
+	return header_init_common(hdr, fd, sizeof(struct lead_f));
 }
 
-int header_read_next(struct header *hdr, int fd, const struct header *prev)
+int header_init_next(struct header *hdr, int fd, const struct header *prev)
 {
 	off_t ofs = prev->storeofs + prev->datalen;
 	ofs = ((ofs + 7) / 8) * 8;
-	return header_read_common(hdr, fd, ofs);
+	return header_init_common(hdr, fd, ofs);
+}
+
+void header_destroy(struct header *hdr)
+{
+	struct listnode *n;
+	for (n = hdr->entrylist.head; n; n = n->next) {
+		free(n->data);
+		n->data = NULL;
+	}
+	list_destroy(&hdr->entrylist);
 }
 
 void header_dump(const struct header *hdr, FILE *f)

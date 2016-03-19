@@ -29,5 +29,7 @@ struct lead {
 };
 
 int lead_init(struct lead *lead, int fd);
+void lead_destroy(struct lead *lead);
 void lead_dump(const struct lead *lead, FILE *f);
+
 #endif

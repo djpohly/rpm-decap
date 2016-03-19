@@ -40,10 +40,12 @@ struct header {
 };
 
 int entry_init(struct entry *ent, int fd, const struct header *hdr, int i);
+void entry_destroy(struct entry *ent);
 int entry_dump(const struct entry *ent, FILE *f);
 
-int header_read_first(struct header *hdr, int fd);
-int header_read_next(struct header *hdr, int fd, const struct header *prev);
+int header_init_first(struct header *hdr, int fd);
+int header_init_next(struct header *hdr, int fd, const struct header *prev);
+void header_destroy(struct header *hdr);
 void header_dump(const struct header *hdr, FILE *f);
 
 #endif

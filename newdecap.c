@@ -46,6 +46,9 @@ int main(int argc, char **argv)
 	}
 
 	close(out);
+
+	rpm_destroy(&rpm);
+
 	close(in);
 
 	return 0;
