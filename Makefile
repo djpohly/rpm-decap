@@ -13,4 +13,6 @@ clean:
 	$(RM) $(BINS) $(OBJS)
 
 $(OBJS): decap.h
-newdecap.o: list.h
+newdecap.o: list.h lead.h header.h rpm.h
+
+newdecap: lead.o header.o rpm.o
