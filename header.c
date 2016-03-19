@@ -6,14 +6,16 @@
 
 #include "list.h"
 
+#include "rpm.h"
 #include "lead.h"
 #include "header.h"
 
 // Index entries
-int entry_init(struct entry *ent, int fd, const struct header *hdr, int i)
+int entry_init(struct entry *ent, const struct header *hdr, int i)
 {
 	struct entry_f ef;
-	pread(fd, &ef, sizeof(ef), hdr->idxofs + i * sizeof(struct entry_f));
+	pread(hdr->rpm->srcfd, &ef, sizeof(ef),
+			hdr->idxofs + i * sizeof(struct entry_f));
 	ent->tag = be32toh(ef.tag);
 	ent->type = be32toh(ef.type);
 	ent->dataofs = hdr->storeofs + (int32_t) be32toh(ef.dataofs);
@@ -34,15 +36,17 @@ int entry_dump(const struct entry *ent, FILE *f)
 
 
 // Header blocks
-static int header_init_common(struct header *hdr, int fd, off_t ofs)
+static int header_init_common(struct header *hdr, const struct rpm *rpm,
+		off_t ofs)
 {
 	struct header_f hf;
-	pread(fd, &hf, sizeof(hf), ofs);
+	pread(rpm->srcfd, &hf, sizeof(hf), ofs);
 	hdr->entries = be32toh(hf.entries);
 	hdr->datalen = be32toh(hf.datalen);
 	hdr->ofs = ofs;
 	hdr->idxofs = ofs + sizeof(struct header_f);
 	hdr->storeofs = hdr->idxofs + hdr->entries * sizeof(struct entry_f);
+	hdr->rpm = rpm;
 
 	// Read entries
 	list_init(&hdr->entrylist);
@@ -50,22 +54,23 @@ static int header_init_common(struct header *hdr, int fd, off_t ofs)
 	int i;
 	for (i = 0; i < hdr->entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
-		entry_init(ent, fd, hdr, i);
+		entry_init(ent, hdr, i);
 		list_append(&hdr->entrylist, ent);
 	}
 	return 0;
 }
 
-int header_init_first(struct header *hdr, int fd)
+int header_init_first(struct header *hdr, const struct rpm *rpm)
 {
-	return header_init_common(hdr, fd, sizeof(struct lead_f));
+	return header_init_common(hdr, rpm, sizeof(struct lead_f));
 }
 
-int header_init_next(struct header *hdr, int fd, const struct header *prev)
+int header_init_next(struct header *hdr, const struct rpm *rpm,
+		const struct header *prev)
 {
 	off_t ofs = prev->storeofs + prev->datalen;
 	ofs = ((ofs + 7) / 8) * 8;
-	return header_init_common(hdr, fd, ofs);
+	return header_init_common(hdr, rpm, ofs);
 }
 
 void header_destroy(struct header *hdr)
