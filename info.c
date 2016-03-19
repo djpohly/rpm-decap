@@ -462,6 +462,7 @@ int main(int argc, char **argv)
 			hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
 
 	int i;
+	int64_t remsize = -1;
 	for (i = 0; i < hdr.nindex; i++) {
 		struct idxentry ent;
 		pread(fd, &ent, sizeof(ent), idxofs + i * sizeof(struct idxentry));
@@ -469,6 +470,22 @@ int main(int argc, char **argv)
 		ent.type = be32toh(ent.type);
 		ent.offset = storeofs + be32toh(ent.offset);
 		ent.count = be32toh(ent.count);
+
+		if (ent.tag == RPMSIGTAG_LONGSIZE) {
+			assert(ent.type == RPM_INT64_TYPE);
+			assert(ent.count == 1);
+
+			pread(fd, &remsize, sizeof(remsize), ent.offset);
+			remsize = be64toh(remsize);
+		} else if (ent.tag == RPMSIGTAG_SIZE) {
+			assert(ent.type == RPM_INT32_TYPE);
+			assert(ent.count == 1);
+
+			uint32_t remsize32 = 0;
+			pread(fd, &remsize32, sizeof(remsize32), ent.offset);
+			remsize = be32toh(remsize32);
+		}
+
 		const char *name = hdr_tag_name(ent.tag);
 		if (name)
 			printf("  %s: ", name);
@@ -511,9 +528,9 @@ int main(int argc, char **argv)
 	idxofs = hdrofs + sizeof(struct header);
 	storeofs = idxofs + hdr.nindex * sizeof(struct idxentry);
 
-	printf("== Header 2 ==\nHeader offset: 0x%lx\nIndex offset: 0x%lx\n"
-			"Store: 0x%lx - 0x%lx\nIndex entries (%u):\n",
-			hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
+	printf("== Header 2 ==\nTotal filesize: 0x%lx\nHeader offset: 0x%lx\n"
+			"Index offset: 0x%lx\nStore: 0x%lx - 0x%lx\nIndex entries (%u):\n",
+			hdrofs + remsize, hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
 
 	for (i = 0; i < hdr.nindex; i++) {
 		struct idxentry ent;
