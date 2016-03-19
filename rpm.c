@@ -31,3 +31,9 @@ void rpm_dump(const struct rpm *rpm, FILE *f)
 	fprintf(f, "\n");
 	fprintf(f, "== Archive ==\nOffset: 0x%lx\n", rpm->arcofs);
 }
+
+int rpm_write(const struct rpm *rpm, int fd)
+{
+	lead_write(&rpm->lead, fd, 0);
+	return 0;
+}

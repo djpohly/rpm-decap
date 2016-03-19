@@ -36,3 +36,23 @@ void lead_dump(const struct lead *lead, FILE *f)
 	fprintf(f, "OS: %d\n", lead->os);
 	fprintf(f, "Signature type: %d\n", lead->sigtype);
 }
+
+int lead_write(const struct lead *lead, int fd, off_t ofs)
+{
+	// Set up on-disk structure
+	struct lead_f lf;
+	memcpy(lf.magic, LEAD_MAGIC, sizeof(lf.magic));
+	lf.major = lead->major;
+	lf.minor = lead->minor;
+	lf.type = htobe16(lead->type);
+	lf.arch = htobe16(lead->arch);
+	memset(lf.name, 0, sizeof(lf.name));
+	strncpy(lf.name, lead->name, sizeof(lf.name));
+	lf.os = htobe16(lead->os);
+	lf.sigtype = htobe16(lead->sigtype);
+	memset(lf.reserved, 0, sizeof(lf.reserved));
+
+	pwrite(fd, &lf, sizeof(lf), ofs);
+
+	return 0;
+}

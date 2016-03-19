@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+static const char LEAD_MAGIC[4] = {0xed, 0xab, 0xee, 0xdb};
+
 // On-disk structure
 struct lead_f {
 	char magic[4];
@@ -31,5 +33,6 @@ struct lead {
 int lead_init(struct lead *lead, int fd);
 void lead_destroy(struct lead *lead);
 void lead_dump(const struct lead *lead, FILE *f);
+int lead_write(const struct lead *lead, int fd, off_t ofs);
 
 #endif
