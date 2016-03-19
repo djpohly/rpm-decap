@@ -40,7 +40,7 @@ static const char *TYPENAME[] = {
 	[RPM_INT64_TYPE] = "int64",
 	[RPM_STRING_TYPE] = "string",
 	[RPM_BIN_TYPE] = "bin",
-	[RPM_STRING_ARRAY_TYPE] = "string[]",
+	[RPM_STRING_ARRAY_TYPE] = "string",
 	[RPM_I18NSTRING_TYPE] = "i18nstring",
 };
 
@@ -92,6 +92,11 @@ static void print_value(int fd, const struct idxentry *hi)
 	int64_t s64;
 	char *string;
 	int len;
+
+	if (hi->count > 1) {
+		printf("%s[%d] @ 0x%lx", TYPENAME[hi->type], hi->count, hi->offset);
+		return;
+	}
 	switch (hi->type) {
 		case RPM_NULL_TYPE:
 			printf("null");
@@ -125,7 +130,9 @@ static void print_value(int fd, const struct idxentry *hi)
 			printf("bin[%d] @ 0x%x", hi->count, hi->offset);
 			break;
 		case RPM_STRING_ARRAY_TYPE:
-			printf("string[%d] @ 0x%x", hi->count, hi->offset);
+			string = read_alloc_string(fd, hi->offset);
+			printf("[\"%s\"]", string);
+			free(string);
 			break;
 		case RPM_I18NSTRING_TYPE:
 			string = read_alloc_string(fd, hi->offset);
