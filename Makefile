@@ -1,4 +1,4 @@
-BINS = info decap fixup
+BINS = info decap fixup newdecap
 
 OBJS = $(addsuffix .o,$(BINS))
 
@@ -13,3 +13,4 @@ clean:
 	$(RM) $(BINS) $(OBJS)
 
 $(OBJS): decap.h
+newdecap.o: list.h
