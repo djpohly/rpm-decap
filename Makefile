@@ -1,4 +1,4 @@
-BINS = info decap
+BINS = info decap fixup
 
 OBJS = $(addsuffix .o,$(BINS))
 
@@ -12,4 +12,4 @@ all: $(BINS)
 clean:
 	$(RM) $(BINS) $(OBJS)
 
-info.o decap.o: decap.h
+$(OBJS): decap.h
