@@ -464,7 +464,7 @@ int main(int argc, char **argv)
 	long idxofs = hdrofs + sizeof(struct header);
 	long storeofs = idxofs + hdr.nindex * sizeof(struct idxentry);
 
-	printf("== Header 1 ==\nHeader offset: 0x%lx\nIndex offset: 0x%lx\n"
+	printf("== Signatures ==\nHeader offset: 0x%lx\nIndex offset: 0x%lx\n"
 			"Store: 0x%lx - 0x%lx\nIndex entries (%u):\n",
 			hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
 
@@ -537,7 +537,7 @@ int main(int argc, char **argv)
 	idxofs = hdrofs + sizeof(struct header);
 	storeofs = idxofs + hdr.nindex * sizeof(struct idxentry);
 
-	printf("== Header 2 ==\nTotal filesize: 0x%lx\nHeader offset: 0x%lx\n"
+	printf("== Header ==\nTotal filesize: 0x%lx\nHeader offset: 0x%lx\n"
 			"Index offset: 0x%lx\nStore: 0x%lx - 0x%lx\nIndex entries (%u):\n",
 			hdrofs + remsize, hdrofs, idxofs, storeofs, storeofs + hdr.len, hdr.nindex);
 
