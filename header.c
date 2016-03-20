@@ -158,11 +158,17 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 	// Precalculate store offset
 	off_t storeofs = ofs + entries * sizeof(struct entry_f);
 
+	// Read header-type entry
+	struct entry hte;
+	entry_init(&hte, storeofs, fd, ofs);
+	hdr->type = hte.tag;
+	ofs += sizeof(struct entry_f);
+
 	// Read entries
 	list_init(&hdr->entrylist);
 
 	int i;
-	for (i = 0; i < entries; i++) {
+	for (i = 1; i < entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
 		entry_init(ent, storeofs, fd, ofs);
 		list_append(&hdr->entrylist, ent);
@@ -183,7 +189,7 @@ void header_destroy(struct header *hdr)
 
 void header_dump(const struct header *hdr, FILE *f)
 {
-	fprintf(f, "== Header ==\n");
+	fprintf(f, "== Header (type %d) ==\n", hdr->type);
 	fprintf(f, " -- Entries --\n");
 
 	struct listnode *n;
@@ -196,9 +202,10 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	// Align header to 8 bytes
 	ofs = ((ofs + 7) / 8) * 8;
 	
-	// Calculate updated values for entries and datalen
-	uint32_t entries = 0;
-	uint32_t datalen = 0;
+	// Calculate updated values for entries and datalen (including the
+	// header-type entry up front)
+	uint32_t entries = 1;
+	uint32_t datalen = 16;
 
 	struct listnode *n;
 	for (n = hdr->entrylist.head; n; n = n->next) {
@@ -222,6 +229,25 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 
 	// Calculate store offset ahead of time
 	off_t storeofs = ofs + entries * sizeof(struct entry_f);
+
+	// Write the reciprocal header-type entry, data first...
+	struct entry_f ef;
+	ef.tag = htobe32(hdr->type);
+	ef.type = htobe32(RPM_BIN_TYPE);
+	ef.dataofs = htobe32(ofs - storeofs); // negative!
+	ef.count = htobe32(16);
+
+	// ... and then the entry
+	struct entry hte;
+	hte.tag = hdr->type;
+	hte.type = RPM_BIN_TYPE;
+	hte.dataofs = storeofs + datalen;
+	hte.datalen = 16;
+	hte.data = &ef;
+
+	// and write it
+	ofs = entry_aligned_start(&hte, ofs);
+	ofs = entry_write(&hte, storeofs, fd, ofs);
 
 	// Write the index entries
 	for (n = hdr->entrylist.head; n; n = n->next) {

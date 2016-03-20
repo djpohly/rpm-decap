@@ -54,6 +54,7 @@ struct header_f {
 // In-memory structures
 struct header {
 	struct list entrylist;
+	uint32_t type;
 };
 
 struct entry {
