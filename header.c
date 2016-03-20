@@ -261,9 +261,11 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 		ofs = entry_write(n->data, storeofs, fd, ofs);
 
 	// Write the store
-	for (n = hdr->entrylist.head; n; n= n->next) {
+	for (n = hdr->entrylist.head; n; n= n->next)
 		ofs = entry_write_data(n->data, fd, ofs);
-	}
+
+	// Put data from header-type entry at the end
+	ofs = entry_write_data(&hte, fd, ofs);
 
 	return ofs;
 }
