@@ -40,17 +40,6 @@ void rpm_destroy(struct rpm *rpm)
 	lead_destroy(&rpm->lead);
 }
 
-void rpm_dump(const struct rpm *rpm, FILE *f)
-{
-	lead_dump(&rpm->lead, f);
-	fprintf(f, "\n");
-	header_dump(&rpm->sighdr, f);
-	fprintf(f, "\n");
-	header_dump(&rpm->taghdr, f);
-	fprintf(f, "\n");
-	fprintf(f, "== Archive ==\nOffset: 0x%lx\n", rpm->arcofs);
-}
-
 off_t rpm_write(const struct rpm *rpm, int arcfd, int fd)
 {
 	off_t ofs = 0;

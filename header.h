@@ -67,11 +67,9 @@ struct entry {
 
 int entry_init(struct entry *ent, off_t store, int fd, off_t ofs);
 void entry_destroy(struct entry *ent);
-int entry_dump(const struct entry *ent, FILE *f);
 
 off_t header_init(struct header *hdr, int fd, off_t ofs);
 void header_destroy(struct header *hdr);
-void header_dump(const struct header *hdr, FILE *f);
 off_t header_write(const struct header *hdr, int fd, off_t ofs);
 
 #endif

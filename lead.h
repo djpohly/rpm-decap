@@ -32,7 +32,6 @@ struct lead {
 
 off_t lead_init(struct lead *lead, int fd, off_t ofs);
 void lead_destroy(struct lead *lead);
-void lead_dump(const struct lead *lead, FILE *f);
 off_t lead_write(const struct lead *lead, int fd, off_t ofs);
 
 #endif

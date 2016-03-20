@@ -26,17 +26,6 @@ void lead_destroy(struct lead *lead)
 {
 }
 
-void lead_dump(const struct lead *lead, FILE *f)
-{
-	fprintf(f, "== Lead ==\n");
-	fprintf(f, "Version: %d.%d\n", lead->major, lead->minor);
-	fprintf(f, "Type: %d\n", lead->type);
-	fprintf(f, "Architecture: %d\n", lead->arch);
-	fprintf(f, "Package name: %-65s\n", lead->name);
-	fprintf(f, "OS: %d\n", lead->os);
-	fprintf(f, "Signature type: %d\n", lead->sigtype);
-}
-
 off_t lead_write(const struct lead *lead, int fd, off_t ofs)
 {
 	// Set up on-disk structure

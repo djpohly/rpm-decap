@@ -121,12 +121,6 @@ static inline off_t entry_aligned_start(const struct entry *ent, off_t ofs)
 	return ((ofs + align - 1) / align) * align;
 }
 
-int entry_dump(const struct entry *ent, FILE *f)
-{
-	fprintf(f, "tag %d: type %d len %d\n", ent->tag,
-			ent->type, ent->datalen);
-}
-
 static off_t entry_write(const struct entry *ent, int fd, off_t ofs)
 {
 	// Set up on-disk structure
@@ -192,16 +186,6 @@ void header_destroy(struct header *hdr)
 		n->data = NULL;
 	}
 	list_destroy(&hdr->entrylist);
-}
-
-void header_dump(const struct header *hdr, FILE *f)
-{
-	fprintf(f, "== Header (type %d) ==\n", hdr->type);
-	fprintf(f, " -- Entries --\n");
-
-	struct listnode *n;
-	for (n = hdr->entrylist.head; n; n = n->next)
-		entry_dump(n->data, f);
 }
 
 off_t header_write(const struct header *hdr, int fd, off_t ofs)

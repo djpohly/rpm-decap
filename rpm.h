@@ -17,7 +17,6 @@ struct rpm {
 
 int rpm_init(struct rpm *rpm, int fd);
 void rpm_destroy(struct rpm *rpm);
-void rpm_dump(const struct rpm *rpm, FILE *f);
 off_t rpm_write(const struct rpm *rpm, int arcfd, int fd);
 
 #endif
