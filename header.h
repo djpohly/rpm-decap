@@ -55,7 +55,6 @@ struct header_f {
 struct header {
 	uint32_t entries;
 	uint32_t datalen;
-	uint32_t ofs;
 	uint32_t idxofs;
 	uint32_t storeofs;
 	struct list entrylist;

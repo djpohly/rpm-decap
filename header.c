@@ -151,7 +151,6 @@ static int header_init_common(struct header *hdr, int fd, off_t ofs)
 	pread(fd, &hf, sizeof(hf), ofs);
 	hdr->entries = be32toh(hf.entries);
 	hdr->datalen = be32toh(hf.datalen);
-	hdr->ofs = ofs;
 	hdr->idxofs = ofs + sizeof(struct header_f);
 	hdr->storeofs = hdr->idxofs + hdr->entries * sizeof(struct entry_f);
 
@@ -192,7 +191,6 @@ void header_destroy(struct header *hdr)
 void header_dump(const struct header *hdr, FILE *f)
 {
 	fprintf(f, "== Header ==\n");
-	fprintf(f, "Offset: 0x%lx\n", hdr->ofs);
 	fprintf(f, "Index offset: 0x%lx\n", hdr->idxofs);
 	fprintf(f, "Store offset: 0x%lx\n", hdr->storeofs);
 	fprintf(f, "Store length: 0x%lx\n", hdr->datalen);
