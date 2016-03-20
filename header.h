@@ -70,7 +70,7 @@ struct entry {
 	uint32_t tag;
 	uint32_t type;
 	uint32_t dataofs;
-	uint32_t count;
+	uint32_t datalen;
 	void *data;
 };
 
