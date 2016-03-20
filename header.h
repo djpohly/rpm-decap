@@ -71,6 +71,7 @@ struct entry {
 	uint32_t type;
 	uint32_t dataofs;
 	uint32_t count;
+	void *data;
 };
 
 int entry_init(struct entry *ent, const struct header *hdr, int i);

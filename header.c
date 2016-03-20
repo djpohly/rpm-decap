@@ -13,23 +13,6 @@
 #include "header.h"
 
 // Index entries
-int entry_init(struct entry *ent, const struct header *hdr, int i)
-{
-	struct entry_f ef;
-	pread(hdr->rpm->srcfd, &ef, sizeof(ef),
-			hdr->idxofs + i * sizeof(struct entry_f));
-	ent->tag = be32toh(ef.tag);
-	ent->type = be32toh(ef.type);
-	ent->dataofs = hdr->storeofs + (int32_t) be32toh(ef.dataofs);
-	ent->count = be32toh(ef.count);
-	ent->hdr = hdr;
-	return 0;
-}
-
-void entry_destroy(struct entry *ent)
-{
-}
-
 static int entry_strarraylen(const struct entry *ent)
 {
 	int sz = 0;
@@ -60,6 +43,28 @@ static inline int entry_datalen(const struct entry *ent)
 			return TYPE_SIZE[ent->type] * ent->count;
 	}
 	return -1;
+}
+
+int entry_init(struct entry *ent, const struct header *hdr, int i)
+{
+	struct entry_f ef;
+	pread(hdr->rpm->srcfd, &ef, sizeof(ef),
+			hdr->idxofs + i * sizeof(struct entry_f));
+	ent->tag = be32toh(ef.tag);
+	ent->type = be32toh(ef.type);
+	ent->dataofs = hdr->storeofs + (int32_t) be32toh(ef.dataofs);
+	ent->count = be32toh(ef.count);
+	ent->hdr = hdr;
+
+	int len = entry_datalen(ent);
+	ent->data = malloc(len);
+	pread(hdr->rpm->srcfd, ent->data, len, ent->dataofs);
+
+	return 0;
+}
+
+void entry_destroy(struct entry *ent)
+{
 }
 
 static inline off_t entry_aligned_start(const struct entry *ent, off_t ofs)
