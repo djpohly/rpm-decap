@@ -60,8 +60,8 @@ struct header {
 struct entry {
 	uint32_t tag;
 	uint32_t type;
-	uint32_t dataofs; // keep this for sorting reasons
 	uint32_t datalen;
+	uint32_t dataofs; // for output only
 	void *data;
 };
 

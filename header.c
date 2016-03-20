@@ -123,18 +123,17 @@ static inline off_t entry_aligned_start(const struct entry *ent, off_t ofs)
 
 int entry_dump(const struct entry *ent, FILE *f)
 {
-	fprintf(f, "tag %d: type %d len %d at 0x%lx\n", ent->tag,
-			ent->type, ent->datalen, ent->dataofs);
+	fprintf(f, "tag %d: type %d len %d\n", ent->tag,
+			ent->type, ent->datalen);
 }
 
-static off_t entry_write(const struct entry *ent, off_t storeofs, int fd,
-		off_t ofs)
+static off_t entry_write(const struct entry *ent, int fd, off_t ofs)
 {
 	// Set up on-disk structure
 	struct entry_f ef;
 	ef.tag = htobe32(ent->tag);
 	ef.type = htobe32(ent->type);
-	ef.dataofs = htobe32(ent->dataofs - storeofs);
+	ef.dataofs = htobe32(ent->dataofs);
 	ef.count = htobe32(entry_count(ent));
 
 	// Write out structure
@@ -210,18 +209,43 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	// Align header to 8 bytes
 	ofs = ((ofs + 7) / 8) * 8;
 	
-	// Calculate updated values for entries and datalen (including the
-	// header-type entry up front)
-	uint32_t entries = 1;
-	uint32_t datalen = 16;
+	// Calculate updated values for entries and datalen
+	uint32_t entries = 0;
+	uint32_t datalen = 0;
 
 	struct listnode *n;
 	for (n = hdr->entrylist.head; n; n = n->next) {
 		struct entry *e = n->data;
 		datalen = entry_aligned_start(e, datalen);
+		e->dataofs = datalen;
 		datalen += e->datalen;
 		entries++;
 	}
+
+	// Add an entry slot for the HTE
+	entries++;
+
+	// Calculate store offset ahead of time
+	off_t storeofs = ofs + sizeof(struct header_f) +
+		entries * sizeof(struct entry_f);
+
+	// Set up the reciprocal header-type entry, data first...
+	struct entry_f ef;
+	ef.tag = htobe32(hdr->type);
+	ef.type = htobe32(RPM_BIN_TYPE);
+	ef.dataofs = htobe32(-entries * sizeof(struct entry_f));
+	ef.count = htobe32(16);
+
+	// ... and then the entry
+	struct entry hte;
+	hte.tag = hdr->type;
+	hte.type = RPM_BIN_TYPE;
+	hte.dataofs = datalen;
+	hte.datalen = 16;
+	hte.data = &ef;
+
+	// Account for header-type entry
+	datalen += 16;
 	
 	// Set up on-disk structure
 	struct header_f hf;
@@ -235,30 +259,12 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	pwrite(fd, &hf, sizeof(hf), ofs);
 	ofs += sizeof(hf);
 
-	// Calculate store offset ahead of time
-	off_t storeofs = ofs + entries * sizeof(struct entry_f);
+	// First write the header-type entry
+	ofs = entry_write(&hte, fd, ofs);
 
-	// Write the reciprocal header-type entry, data first...
-	struct entry_f ef;
-	ef.tag = htobe32(hdr->type);
-	ef.type = htobe32(RPM_BIN_TYPE);
-	ef.dataofs = htobe32(ofs - storeofs); // negative!
-	ef.count = htobe32(16);
-
-	// ... and then the entry
-	struct entry hte;
-	hte.tag = hdr->type;
-	hte.type = RPM_BIN_TYPE;
-	hte.dataofs = storeofs + datalen - 16;
-	hte.datalen = 16;
-	hte.data = &ef;
-
-	// and write it
-	ofs = entry_write(&hte, storeofs, fd, ofs);
-
-	// Write the index entries
+	// Then write the index entries
 	for (n = hdr->entrylist.head; n; n = n->next)
-		ofs = entry_write(n->data, storeofs, fd, ofs);
+		ofs = entry_write(n->data, fd, ofs);
 
 	// Write the store
 	for (n = hdr->entrylist.head; n; n= n->next)

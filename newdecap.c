@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <endian.h>
+#include <rpm/rpmtag.h>
 
 #include "list.h"
 #include "lead.h"
@@ -34,8 +35,20 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("RPM %s loaded\n\n", argv[1]);
-	rpm_dump(&rpm, stdout);
+	// Remove FILECAPS tag
+	struct listnode *n;
+	struct listnode *prev = NULL;
+	for (n = rpm.taghdr.entrylist.head; n; n = n->next) {
+		struct entry *ent = n->data;
+		if (ent->tag == RPMTAG_FILECAPS) {
+			if (prev)
+				prev->next = n->next;
+			else
+				rpm.taghdr.entrylist.head = n->next;
+			break;
+		}
+		prev = n;
+	}
 
 	// Open output file
 	int out = open(argv[2], O_WRONLY | O_TRUNC | O_CREAT, 0644);
