@@ -154,7 +154,7 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 	hdr->entries = be32toh(hf.entries);
 	hdr->datalen = be32toh(hf.datalen);
 	off_t idxofs = ofs + sizeof(struct header_f);
-	hdr->storeofs = idxofs + hdr->entries * sizeof(struct entry_f);
+	off_t storeofs = idxofs + hdr->entries * sizeof(struct entry_f);
 
 	// Read entries
 	list_init(&hdr->entrylist);
@@ -162,10 +162,10 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 	int i;
 	for (i = 0; i < hdr->entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
-		entry_init(ent, idxofs, hdr->storeofs, i, fd);
+		entry_init(ent, idxofs, storeofs, i, fd);
 		list_append(&hdr->entrylist, ent);
 	}
-	return hdr->storeofs + hdr->datalen;
+	return storeofs + hdr->datalen;
 }
 
 void header_destroy(struct header *hdr)
@@ -218,10 +218,13 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	pwrite(fd, &hf, sizeof(hf), ofs);
 	ofs += sizeof(hf);
 
+	// Calculate store offset ahead of time
+	off_t storeofs = ofs + entries * sizeof(struct entry_f);
+
 	// Write the index entries
 	for (n = hdr->entrylist.head; n; n = n->next) {
 		ofs = entry_aligned_start(n->data, ofs);
-		ofs = entry_write(n->data, hdr->storeofs, fd, ofs);
+		ofs = entry_write(n->data, storeofs, fd, ofs);
 	}
 
 	return ofs;
