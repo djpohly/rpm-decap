@@ -7,10 +7,11 @@
 // RPM file
 int rpm_init(struct rpm *rpm, int fd)
 {
-	lead_init(&rpm->lead, fd);
-	header_init_first(&rpm->sighdr, fd);
-	header_init_next(&rpm->taghdr, fd, &rpm->sighdr);
-	rpm->arcofs = rpm->taghdr.storeofs + rpm->taghdr.datalen;
+	off_t ofs = 0;
+	ofs = lead_init(&rpm->lead, fd, ofs);
+	ofs = header_init(&rpm->sighdr, fd, ofs);
+	ofs = header_init(&rpm->taghdr, fd, ofs);
+	rpm->arcofs = ofs;
 	return 0;
 }
 

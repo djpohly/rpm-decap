@@ -144,8 +144,11 @@ static off_t entry_write(const struct entry *ent, off_t storeofs, int fd,
 
 
 // Header blocks
-static int header_init_common(struct header *hdr, int fd, off_t ofs)
+off_t header_init(struct header *hdr, int fd, off_t ofs)
 {
+	// Align to 8-byte boundary
+	ofs = ((ofs + 7) / 8) * 8;
+
 	struct header_f hf;
 	pread(fd, &hf, sizeof(hf), ofs);
 	hdr->entries = be32toh(hf.entries);
@@ -162,19 +165,7 @@ static int header_init_common(struct header *hdr, int fd, off_t ofs)
 		entry_init(ent, idxofs, hdr->storeofs, i, fd);
 		list_append(&hdr->entrylist, ent);
 	}
-	return 0;
-}
-
-int header_init_first(struct header *hdr, int fd)
-{
-	return header_init_common(hdr, fd, sizeof(struct lead_f));
-}
-
-int header_init_next(struct header *hdr, int fd, const struct header *prev)
-{
-	off_t ofs = prev->storeofs + prev->datalen;
-	ofs = ((ofs + 7) / 8) * 8;
-	return header_init_common(hdr, fd, ofs);
+	return hdr->storeofs + hdr->datalen;
 }
 
 void header_destroy(struct header *hdr)

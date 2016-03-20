@@ -7,10 +7,10 @@
 #include "lead.h"
 
 // Lead
-int lead_init(struct lead *lead, int fd)
+off_t lead_init(struct lead *lead, int fd, off_t ofs)
 {
 	struct lead_f lf;
-	pread(fd, &lf, sizeof(lf), 0);
+	pread(fd, &lf, sizeof(lf), ofs);
 	lead->major = lf.major;
 	lead->minor = lf.minor;
 	lead->type = be16toh(lf.type);
@@ -19,7 +19,7 @@ int lead_init(struct lead *lead, int fd)
 	lead->os = be16toh(lf.os);
 	lead->sigtype = be16toh(lf.sigtype);
 
-	return 0;
+	return ofs + sizeof(lf);
 }
 
 void lead_destroy(struct lead *lead)
