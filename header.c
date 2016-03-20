@@ -151,16 +151,16 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 
 	struct header_f hf;
 	pread(fd, &hf, sizeof(hf), ofs);
-	hdr->entries = be32toh(hf.entries);
+	uint32_t entries = be32toh(hf.entries);
 	uint32_t datalen = be32toh(hf.datalen);
 	off_t idxofs = ofs + sizeof(struct header_f);
-	off_t storeofs = idxofs + hdr->entries * sizeof(struct entry_f);
+	off_t storeofs = idxofs + entries * sizeof(struct entry_f);
 
 	// Read entries
 	list_init(&hdr->entrylist);
 
 	int i;
-	for (i = 0; i < hdr->entries; i++) {
+	for (i = 0; i < entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
 		entry_init(ent, idxofs, storeofs, i, fd);
 		list_append(&hdr->entrylist, ent);
@@ -181,7 +181,7 @@ void header_destroy(struct header *hdr)
 void header_dump(const struct header *hdr, FILE *f)
 {
 	fprintf(f, "== Header ==\n");
-	fprintf(f, " -- Entries (%d) --\n", hdr->entries);
+	fprintf(f, " -- Entries --\n");
 
 	struct listnode *n;
 	for (n = hdr->entrylist.head; n; n = n->next)
