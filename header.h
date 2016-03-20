@@ -7,9 +7,6 @@
 
 #include "list.h"
 
-// Forward-declare
-struct rpm;
-
 static const char HEADER_MAGIC[] = {0x8e, 0xad, 0xe8};
 static const char HEADER_VERSION = 1;
 
@@ -56,7 +53,6 @@ struct header_f {
 
 // In-memory structures
 struct header {
-	const struct rpm *rpm;
 	uint32_t entries;
 	uint32_t datalen;
 	uint32_t ofs;
@@ -66,7 +62,6 @@ struct header {
 };
 
 struct entry {
-	const struct header *hdr;
 	uint32_t tag;
 	uint32_t type;
 	uint32_t dataofs;
@@ -74,13 +69,12 @@ struct entry {
 	void *data;
 };
 
-int entry_init(struct entry *ent, const struct header *hdr, int i);
+int entry_init(struct entry *ent, const struct header *hdr, int i, int fd);
 void entry_destroy(struct entry *ent);
 int entry_dump(const struct entry *ent, FILE *f);
 
-int header_init_first(struct header *hdr, const struct rpm *rpm);
-int header_init_next(struct header *hdr, const struct rpm *rpm,
-		const struct header *prev);
+int header_init_first(struct header *hdr, int fd);
+int header_init_next(struct header *hdr, int fd, const struct header *prev);
 void header_destroy(struct header *hdr);
 void header_dump(const struct header *hdr, FILE *f);
 off_t header_write(const struct header *hdr, int fd, off_t ofs);

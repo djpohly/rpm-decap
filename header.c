@@ -97,18 +97,17 @@ static uint32_t entry_count(const struct entry *ent)
 	}
 }
 
-int entry_init(struct entry *ent, const struct header *hdr, int i)
+int entry_init(struct entry *ent, const struct header *hdr, int i, int fd)
 {
 	struct entry_f ef;
-	pread(hdr->rpm->srcfd, &ef, sizeof(ef),
+	pread(fd, &ef, sizeof(ef),
 			hdr->idxofs + i * sizeof(struct entry_f));
-	ent->hdr = hdr;
 	ent->tag = be32toh(ef.tag);
 	ent->type = be32toh(ef.type);
 	ent->dataofs = hdr->storeofs + (int32_t) be32toh(ef.dataofs);
 
 	uint32_t count = be32toh(ef.count);
-	entry_init_data(ent, hdr->rpm->srcfd, ent->dataofs, count);
+	entry_init_data(ent, fd, ent->dataofs, count);
 
 	return 0;
 }
@@ -129,13 +128,14 @@ int entry_dump(const struct entry *ent, FILE *f)
 			ent->type, ent->datalen, ent->dataofs);
 }
 
-static off_t entry_write(const struct entry *ent, int fd, off_t ofs)
+static off_t entry_write(const struct entry *ent, off_t storeofs, int fd,
+		off_t ofs)
 {
 	// Set up on-disk structure
 	struct entry_f ef;
 	ef.tag = htobe32(ent->tag);
 	ef.type = htobe32(ent->type);
-	ef.dataofs = htobe32(ent->dataofs - ent->hdr->storeofs);
+	ef.dataofs = htobe32(ent->dataofs - storeofs);
 	ef.count = htobe32(entry_count(ent));
 
 	// Write out structure
@@ -145,17 +145,15 @@ static off_t entry_write(const struct entry *ent, int fd, off_t ofs)
 
 
 // Header blocks
-static int header_init_common(struct header *hdr, const struct rpm *rpm,
-		off_t ofs)
+static int header_init_common(struct header *hdr, int fd, off_t ofs)
 {
 	struct header_f hf;
-	pread(rpm->srcfd, &hf, sizeof(hf), ofs);
+	pread(fd, &hf, sizeof(hf), ofs);
 	hdr->entries = be32toh(hf.entries);
 	hdr->datalen = be32toh(hf.datalen);
 	hdr->ofs = ofs;
 	hdr->idxofs = ofs + sizeof(struct header_f);
 	hdr->storeofs = hdr->idxofs + hdr->entries * sizeof(struct entry_f);
-	hdr->rpm = rpm;
 
 	// Read entries
 	list_init(&hdr->entrylist);
@@ -163,23 +161,22 @@ static int header_init_common(struct header *hdr, const struct rpm *rpm,
 	int i;
 	for (i = 0; i < hdr->entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
-		entry_init(ent, hdr, i);
+		entry_init(ent, hdr, i, fd);
 		list_append(&hdr->entrylist, ent);
 	}
 	return 0;
 }
 
-int header_init_first(struct header *hdr, const struct rpm *rpm)
+int header_init_first(struct header *hdr, int fd)
 {
-	return header_init_common(hdr, rpm, sizeof(struct lead_f));
+	return header_init_common(hdr, fd, sizeof(struct lead_f));
 }
 
-int header_init_next(struct header *hdr, const struct rpm *rpm,
-		const struct header *prev)
+int header_init_next(struct header *hdr, int fd, const struct header *prev)
 {
 	off_t ofs = prev->storeofs + prev->datalen;
 	ofs = ((ofs + 7) / 8) * 8;
-	return header_init_common(hdr, rpm, ofs);
+	return header_init_common(hdr, fd, ofs);
 }
 
 void header_destroy(struct header *hdr)
@@ -238,7 +235,7 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	// Write the index entries
 	for (n = hdr->entrylist.head; n; n = n->next) {
 		ofs = entry_aligned_start(n->data, ofs);
-		ofs = entry_write(n->data, fd, ofs);
+		ofs = entry_write(n->data, hdr->storeofs, fd, ofs);
 	}
 
 	return ofs;

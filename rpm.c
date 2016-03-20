@@ -7,10 +7,9 @@
 // RPM file
 int rpm_init(struct rpm *rpm, int fd)
 {
-	rpm->srcfd = fd;
 	lead_init(&rpm->lead, fd);
-	header_init_first(&rpm->sighdr, rpm);
-	header_init_next(&rpm->taghdr, rpm, &rpm->sighdr);
+	header_init_first(&rpm->sighdr, fd);
+	header_init_next(&rpm->taghdr, fd, &rpm->sighdr);
 	rpm->arcofs = rpm->taghdr.storeofs + rpm->taghdr.datalen;
 	return 0;
 }

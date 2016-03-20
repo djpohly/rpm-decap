@@ -13,7 +13,6 @@ struct rpm {
 	struct header sighdr;
 	struct header taghdr;
 	off_t arcofs;
-	int srcfd;
 };
 
 int rpm_init(struct rpm *rpm, int fd);
