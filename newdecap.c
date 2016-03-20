@@ -45,7 +45,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	rpm_write(&rpm, out);
+	lseek(in, rpm.arcofs, SEEK_SET);
+	rpm_write(&rpm, in, out);
 
 	close(out);
 
