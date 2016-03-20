@@ -142,6 +142,14 @@ static off_t entry_write(const struct entry *ent, off_t storeofs, int fd,
 	return ofs + sizeof(ef);
 }
 
+static off_t entry_write_data(const struct entry *ent, int fd, off_t ofs)
+{
+	// Get correct alignment for this entry's type
+	ofs = entry_aligned_start(ent, ofs);
+	pwrite(fd, ent->data, ent->datalen, ofs);
+	return ofs + ent->datalen;
+}
+
 
 // Header blocks
 off_t header_init(struct header *hdr, int fd, off_t ofs)
@@ -241,18 +249,20 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	struct entry hte;
 	hte.tag = hdr->type;
 	hte.type = RPM_BIN_TYPE;
-	hte.dataofs = storeofs + datalen;
+	hte.dataofs = storeofs + datalen - 16;
 	hte.datalen = 16;
 	hte.data = &ef;
 
 	// and write it
-	ofs = entry_aligned_start(&hte, ofs);
 	ofs = entry_write(&hte, storeofs, fd, ofs);
 
 	// Write the index entries
-	for (n = hdr->entrylist.head; n; n = n->next) {
-		ofs = entry_aligned_start(n->data, ofs);
+	for (n = hdr->entrylist.head; n; n = n->next)
 		ofs = entry_write(n->data, storeofs, fd, ofs);
+
+	// Write the store
+	for (n = hdr->entrylist.head; n; n= n->next) {
+		ofs = entry_write_data(n->data, fd, ofs);
 	}
 
 	return ofs;
