@@ -54,7 +54,6 @@ struct header_f {
 // In-memory structures
 struct header {
 	uint32_t entries;
-	uint32_t datalen;
 	struct list entrylist;
 };
 

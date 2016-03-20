@@ -152,7 +152,7 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 	struct header_f hf;
 	pread(fd, &hf, sizeof(hf), ofs);
 	hdr->entries = be32toh(hf.entries);
-	hdr->datalen = be32toh(hf.datalen);
+	uint32_t datalen = be32toh(hf.datalen);
 	off_t idxofs = ofs + sizeof(struct header_f);
 	off_t storeofs = idxofs + hdr->entries * sizeof(struct entry_f);
 
@@ -165,7 +165,7 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 		entry_init(ent, idxofs, storeofs, i, fd);
 		list_append(&hdr->entrylist, ent);
 	}
-	return storeofs + hdr->datalen;
+	return storeofs + datalen;
 }
 
 void header_destroy(struct header *hdr)
@@ -181,7 +181,6 @@ void header_destroy(struct header *hdr)
 void header_dump(const struct header *hdr, FILE *f)
 {
 	fprintf(f, "== Header ==\n");
-	fprintf(f, "Store length: 0x%lx\n", hdr->datalen);
 	fprintf(f, " -- Entries (%d) --\n", hdr->entries);
 
 	struct listnode *n;
@@ -211,8 +210,8 @@ off_t header_write(const struct header *hdr, int fd, off_t ofs)
 	memcpy(hf.magic, HEADER_MAGIC, sizeof(hf.magic));
 	hf.version = HEADER_VERSION;
 	memset(hf.reserved, 0, sizeof(hf.reserved));
-	hf.entries = htobe32(hdr->entries);
-	hf.datalen = htobe32(hdr->datalen);
+	hf.entries = htobe32(entries);
+	hf.datalen = htobe32(datalen);
 
 	// Write the header information
 	pwrite(fd, &hf, sizeof(hf), ofs);
