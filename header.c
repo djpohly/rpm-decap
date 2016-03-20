@@ -97,14 +97,13 @@ static uint32_t entry_count(const struct entry *ent)
 	}
 }
 
-int entry_init(struct entry *ent, const struct header *hdr, int i, int fd)
+int entry_init(struct entry *ent, off_t idx, off_t store, int i, int fd)
 {
 	struct entry_f ef;
-	pread(fd, &ef, sizeof(ef),
-			hdr->idxofs + i * sizeof(struct entry_f));
+	pread(fd, &ef, sizeof(ef), idx + i * sizeof(struct entry_f));
 	ent->tag = be32toh(ef.tag);
 	ent->type = be32toh(ef.type);
-	ent->dataofs = hdr->storeofs + (int32_t) be32toh(ef.dataofs);
+	ent->dataofs = store + (int32_t) be32toh(ef.dataofs);
 
 	uint32_t count = be32toh(ef.count);
 	entry_init_data(ent, fd, ent->dataofs, count);
@@ -151,8 +150,8 @@ static int header_init_common(struct header *hdr, int fd, off_t ofs)
 	pread(fd, &hf, sizeof(hf), ofs);
 	hdr->entries = be32toh(hf.entries);
 	hdr->datalen = be32toh(hf.datalen);
-	hdr->idxofs = ofs + sizeof(struct header_f);
-	hdr->storeofs = hdr->idxofs + hdr->entries * sizeof(struct entry_f);
+	off_t idxofs = ofs + sizeof(struct header_f);
+	hdr->storeofs = idxofs + hdr->entries * sizeof(struct entry_f);
 
 	// Read entries
 	list_init(&hdr->entrylist);
@@ -160,7 +159,7 @@ static int header_init_common(struct header *hdr, int fd, off_t ofs)
 	int i;
 	for (i = 0; i < hdr->entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
-		entry_init(ent, hdr, i, fd);
+		entry_init(ent, idxofs, hdr->storeofs, i, fd);
 		list_append(&hdr->entrylist, ent);
 	}
 	return 0;
@@ -191,8 +190,6 @@ void header_destroy(struct header *hdr)
 void header_dump(const struct header *hdr, FILE *f)
 {
 	fprintf(f, "== Header ==\n");
-	fprintf(f, "Index offset: 0x%lx\n", hdr->idxofs);
-	fprintf(f, "Store offset: 0x%lx\n", hdr->storeofs);
 	fprintf(f, "Store length: 0x%lx\n", hdr->datalen);
 	fprintf(f, " -- Entries (%d) --\n", hdr->entries);
 

@@ -55,7 +55,6 @@ struct header_f {
 struct header {
 	uint32_t entries;
 	uint32_t datalen;
-	uint32_t idxofs;
 	uint32_t storeofs;
 	struct list entrylist;
 };
@@ -68,7 +67,7 @@ struct entry {
 	void *data;
 };
 
-int entry_init(struct entry *ent, const struct header *hdr, int i, int fd);
+int entry_init(struct entry *ent, off_t idx, off_t store, int i, int fd);
 void entry_destroy(struct entry *ent);
 int entry_dump(const struct entry *ent, FILE *f);
 
