@@ -64,7 +64,7 @@ struct entry {
 	void *data;
 };
 
-int entry_init(struct entry *ent, off_t idx, off_t store, int i, int fd);
+int entry_init(struct entry *ent, off_t store, int fd, off_t ofs);
 void entry_destroy(struct entry *ent);
 int entry_dump(const struct entry *ent, FILE *f);
 

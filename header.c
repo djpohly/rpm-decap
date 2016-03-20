@@ -97,10 +97,10 @@ static uint32_t entry_count(const struct entry *ent)
 	}
 }
 
-int entry_init(struct entry *ent, off_t idx, off_t store, int i, int fd)
+int entry_init(struct entry *ent, off_t store, int fd, off_t ofs)
 {
 	struct entry_f ef;
-	pread(fd, &ef, sizeof(ef), idx + i * sizeof(struct entry_f));
+	pread(fd, &ef, sizeof(ef), ofs);
 	ent->tag = be32toh(ef.tag);
 	ent->type = be32toh(ef.type);
 	ent->dataofs = store + (int32_t) be32toh(ef.dataofs);
@@ -151,10 +151,12 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 
 	struct header_f hf;
 	pread(fd, &hf, sizeof(hf), ofs);
+	ofs += sizeof(struct header_f);
 	uint32_t entries = be32toh(hf.entries);
 	uint32_t datalen = be32toh(hf.datalen);
-	off_t idxofs = ofs + sizeof(struct header_f);
-	off_t storeofs = idxofs + entries * sizeof(struct entry_f);
+
+	// Precalculate store offset
+	off_t storeofs = ofs + entries * sizeof(struct entry_f);
 
 	// Read entries
 	list_init(&hdr->entrylist);
@@ -162,10 +164,11 @@ off_t header_init(struct header *hdr, int fd, off_t ofs)
 	int i;
 	for (i = 0; i < entries; i++) {
 		struct entry *ent = malloc(sizeof(*ent));
-		entry_init(ent, idxofs, storeofs, i, fd);
+		entry_init(ent, storeofs, fd, ofs);
 		list_append(&hdr->entrylist, ent);
+		ofs += sizeof(struct entry_f);
 	}
-	return storeofs + datalen;
+	return ofs + datalen;
 }
 
 void header_destroy(struct header *hdr)
